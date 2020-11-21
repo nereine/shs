@@ -1,0 +1,19 @@
+#!/bin/bash
+## Do NOT forget to append "&"
+# common
+nitrogen --restore &
+xsetroot -cursor_name left_ptr &
+xfce4-power-manager &
+# Linux
+case "$(uname)" in
+	Linux)	nm-applet &
+		volumeicon &
+		tint2 &
+		if [[ "$(cat /etc/issue)" == "Arch"* ]]; then
+			picom -b -c & # Arch compton was renamed to picom
+		else	compton -b -c &
+		fi
+			;;
+	*)	compton -b -c &
+			;;
+esac

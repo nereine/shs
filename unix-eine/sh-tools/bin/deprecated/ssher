@@ -1,0 +1,52 @@
+#!/bin/bash
+#ssher - ssh log in shortcut
+printf "%s\n" "ssher: SSH REMOTE LOGIN V1.2" "Default ssh port is 22" "See 'ssher help' for more info" ; ssherhost="$1" ; ssherport="$2" # ssher use $1 as shortcut, $2 as port number
+hostloc="$HOME"/bin/ssher.hosts ; ident="$HOME"/.ssh/id_rsa # ssher will source ssher.hosts file and the identity file from the locations specified
+display-help() { less << _EOF_
+ssher 1.2
+ssher is a stupid, shitty shell script for ssh shortcuts
+You can add host shortcuts or aliases by editing ssher.hosts file
+
+>>	It is recommended that you edit the ssher.hosts file before use
+>>	There are examples provided in the file
+
+ssher Basic syntax:
+
+	ssher host port <ip>
+
+Where host can be the pre-recorded shortcut or the actual hostname
+
+	e.g. ssher rock 169
+
+The above command will connect to user@host aliased to "rock" 
+at port 169
+
+	e.g. ssher 
+
+If you wish to use pre-recorded IP Address instead of the hostname,
+you can specify 'ip' as third flag
+	
+	e.g. change "ssher school 127" to "ssher school 127 ip"
+
+The above command will connect to user@host aliased to "school"
+at port 127 using pre-recorded IP Address
+
+You are now viewing ssher help page
+To print this help page, issue:
+ssher -h, or:  ssher --help
+Press Q to exit.
+
+_EOF_
+	exit 0
+}
+case "$1" in *-[hH]*) display-help ;; *"help") display-help ;; esac
+source "$hostloc" # Record your shortcuts/variables in ssher.hosts file
+[[ -z "$ssherport" ]] && portssh="22" || [[ "$ssherport" == "22" ]] && printf "default port is already 22\n" && portssh="$ssherport" || portssh="$ssherport" # Port definition (default is 22)
+ssher-df() { # ssher-df = default ssher execution (use hostname)
+	printf "ssher-df: Connecting $hostssh at port $portssh\n" ; ssh -i "$ident" "$loginssh"@"$hostssh" -p "$portssh" || clear && printf "ssher-ip: reconnecting in 4s, if you wish to exit, do it now (CTRL+C)\n" ; sleep 4 && ssh "$loginssh"@"$hostssh" -p "$portssh" # like ssher-ip below, ssher-df first connect using "-i" option (pubkey), and if it failed, reconnects with normal password
+}
+ssher-ip() { # ssher-ip = ssher execution using IP Address
+	printf "ssher-ip: Connecting $hostssh at port $portssh using IP Address at $ipssh\n" ; ssh -i "$ident" "$loginssh"@"$ipssh" -p "$portssh" || clear && printf "ssher-ip: reconnecting in 4s, if you wish to exit, do it now (CTRL+C)\n" ; sleep 4 && ssh "$loginssh"@"$ipssh" -p "$portssh"
+}
+case "$3" in "ip") ssher-ip ;; *) ssher-df || clear && printf "ssher-ip: reconnecting in 4s, if you wish to exit, do it now (CTRL+C)\n" ; sleep 4 && ssher-ip ;; esac
+#____________________   EOF   ___________________ _#

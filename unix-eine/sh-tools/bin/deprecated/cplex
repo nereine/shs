@@ -1,0 +1,4 @@
+#!/bin/bash
+# establish a tunnel over ssh to plex
+while true ; do read -r -p "Please enter Plex server hostname or IP address: " plexhost && read -r -p "Please enter ssh port of Plex server: " plexport && [[ -n "$plexport" ]] && [[ -n "$plexhost" ]] && break || printf "You must enter both the hostname/IP and ssh port of the Plex server\n" ; done
+ssh -p "$plexport" "$plexhost" -L 8888:localhost:32400

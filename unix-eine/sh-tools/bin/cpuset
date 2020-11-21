@@ -1,0 +1,23 @@
+#!/bin/bash
+# cpuset - set Linux CPU frequency, V2.0
+# requires cpupower or cpufreq-set
+printf "cpuset: Quick CPU frequency shortcuts for Linux\n"
+[[ "$(uname)" != "Linux" ]] && printf "Unfortunately cpuset does NOT support your operating system ($(uname))\n" && exit 1
+######## Declare Variables ########
+availgov="$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors)" ; selectedgov="$1"
+######## Function(s)	###########
+# change freq governor on ALL cores
+setfreq()	{ # use cpupower if availanle, else use cpufreq
+[[ "$(uname)" == "Linux" ]] && [[ -z "$(command -v cpupower)" ]] && printf "cpuset: cpupower not found, using cpufreq-set to set CPU frequency\n" && sudo cpufreq-set -r -g $selectedgov || printf "cpuset: using cpupower to set CPU frequency\n" && sudo cpupower frequency-set -g $selectedgov
+}
+# leave cpuset peacefully
+leave()		{
+	currgov=$( cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor ) && printf "CURRENT CPU GOVERNOR: $currgov\n" && exit 0
+}
+# list available cpu frequency govs
+cpuset-list()	{
+	printf "%s\n" "listing available governors.." "$availgov" && leave
+}
+# Execution
+[[ -z "$1" ]] && printf "cpuset: argument not specified, will list only\n" && cpuset-list || case "$1" in "-l") cpuset-list ;; list) cpuset-list ;; "--list") cpuset-list ;; "-l") cpuset-list ;; *) setfreq && leave ;; esac
+#____________________   EOF   ____________________#

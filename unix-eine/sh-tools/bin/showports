@@ -1,0 +1,23 @@
+#!/bin/bash
+# show ports information on FreeBSD
+[[ "$(uname)" != "FreeBSD" ]] && printf "%s\n" "showports: This system is not FreeBSD" "showports: Aborting.." && exit 1
+printf "Specify your poudriere repository name, leave blank for default\n"
+read -p "(Default is poudriere): " pkgrepo ; [[ -z "$pkgrepo" ]] && pkgrepo="poudriere"
+getports() {
+#	pkg query --all '%o %n-%v %R' | grep unknown-repository
+	pkg query --all '%o %R' | grep unknown-repository
+}
+getpouds() {
+#	pkg query --all '%o %n-%v %R' | grep "$pkgrepo"
+	pkg query --all '%o %R' | grep "$pkgrepo"
+}
+printf "Showing ports compiled locally:\n" ; getports
+portsnum=$(getports | wc | awk '{print $1}') ; printf "%s\n" "" "Total: $portsnum local ports" ""
+printf "Showing Poudriere Packages as well as the actual poudriere:\n" ; getpouds
+greppoud=$(getpouds | wc | awk '{print $1}') && poudsnum=$(($greppoud-1))
+printf "%s\n" "" "Total: $poudsnum Poudriere packages (minus itself)" "" "Note: You can annotate poudriere packages to only use poudriere repository by using: pkg annotate -A foo repository poudriere"
+getpkg() {
+	pkgnum=$(pkg query --all %R | grep FreeBSD | wc | awk '{print $1}') && printf "Total: $pkgnum pkg packages\n"
+}
+while true; do read -p "Do you want to show pkg packages?: " yn ; case "$yn" in [yY]*) getpkg ; break ;; [nN]*) printf "showports: Exiting\n" ; break ;; *) printf "showports: Please anwser Yes or No\n" ;; esac ; done
+exit 0

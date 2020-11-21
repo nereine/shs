@@ -1,0 +1,113 @@
+#!/bin/bash
+# This file is sourced by up-help. Its location can be referenced in $uhloc declaration within up-help in the up file.
+clear	# The message below will be printed as multiline, and each string got its line.
+printf "%s\n" "Welcome to up-help! (You have requested up-help)" "Notice: This generic up-help message is printed to the screen BEFORE" "the OS-specific help page is displayed" "If you did not see the OS-specific help page with command examples," "chances are your OS is not supported by up." "" "For more info on up, issue: 'up help info'" "" "Because sh-tools scripts are maintained alongside a certain set of 'dotfiles'," "up may expect your shell to have some environment variables from the dotfiles." "Fully compatible dotfiles are provided at https://gitlab.com/artnoi-staple/dotfiles." "up and the rest of sh-tools is maintained by @artnoi43" "Contribution and suggestion is welcomed at https://gitlab.com/artnoi-staple" ""
+[[ "$defi2" == "info" ]] && printf "%s\n" "" "up-help_info: up is constructed of multiple bash functions based on the host's operating system" "" "It performs checks at startup to determine the host, then executes the specific up script for that platform" "For example, up-macos performs updates on macOS while up-deb performs updates for Debian systems" "up also features other portable functions, like up-help which helps with writing and" "displaying help pages, or up-print-error which prints out all error messages" "up is written entirely in bash because of readability and its intended use case," "which is to control the shell to perform system upgrade" "" "up-git is a new experimental function in up that is available to all platforms," "though it requires git (obviously, because it is git pull script)" && exit # stop here
+case "$defi1" in "git") less << _EOF_
+Below is the help page for up-git()
+
+About:	up-git is experimental git pull script embedded within up.
+	up-git has its own execution case, and is not included in up-main
+	Unlike other up functions, it is maintained independently,
+	and can be spun-off if I see fit. For now, it is considered
+	part of up although it shares very little execution process
+	to avoid issues when it is removed entirely, which is a possibility.
+
+Status:	As of now, 'up git' can be used to pull subdirectories
+	of the specified directory called git root directory (gdir).
+	Because it is in experimental stage, help page will not provide
+	specific how-to guides on customization.
+
+Usage:	'up git' will invoke read prompt whose value will be used as gdir.
+	up-git will then loop through a set of git directories and pull/merge
+	when possible. You can provide specific directories in up-git section.
+_EOF_
+exit 0 ;; esac
+
+[[ "$1" == "help" ]] && up-git-help
+case "$updistro" in
+		macOS) less << _EOF_
+Notice	: 'up grade' can be used to upgrade ONE package, e.g. $ up grade vim
+Notice	: homebrew-cask and macOS software update is now supported in up.
+Tips	: You can use 'full' option to update all supported software.
+Commands for Homebrew (macOS)
+	
+	up date 	= brew update && brew cask update
+	up grade	= brew upgrade <name>
+	up grade c	= brew cask upgrade <name>
+	up clean	= brew cleanup
+	up list		= brew outdated
+	up full		= full system upgrade (macOS, Homebrew, homebrew-casks)
+	up help		= display this help
+
+The command list may have been changed.
+Please check the exact up file before use.
+_EOF_
+		;;
+		APT) less << _EOF_
+Notice	: You may provide package names for 'up grade' as in <name>.
+Notice	: You may provide option for 'up date', e.g. up date --fix-missing.
+Notice	: By default, 'up clean' autoremoves and purges config files.
+Commands for APT
+		
+	up date 	= sudo apt update
+	up grade	= sudo apt upgrade <name> -yy
+	up clean	= sudo apt update &&
+			  sudo apt autoremove --purge &&
+			  sudo apt autoclean
+	up list		= apt list --upgradable
+	up help		= display this help	
+
+The command list may have been changed.
+Please check the exact up file before use.
+_EOF_
+		;;
+		Pacman) less << _EOF_
+Commands for Pacman
+	
+	up date		= check for updates using checkupdates**
+	up grade	= full system upgrade
+	up y		= full system upgrade using yay
+	up install	= full system upgrade and install the package
+	up clean	= clean pacman cache using paccache**
+	up help		= display this help
+	** = requires package: pacman-contrib
+	Note: Every up command for arch has -Syu option to avoid breakage.
+
+The command list may have been changed.
+Please check the exact up file before use.
+_EOF_
+		;;
+		Xbps) less << _EOF_
+Notice	: up for Void Linux currently has very limited functionality.
+Commands for Xbps
+
+	up date		= full system upgrade
+	up install	= full system upgrade and install the package
+	up clean	= clean download cache and orphaned packages
+	up help		= display this help
+
+The command list may have been changed.
+Please check the exact up file before use.
+_EOF_
+		;;
+		FreeBSD) less << _EOF_
+Notice	: up for FreeBSD currently has very limited functionality.
+Notice	: up for FreeBSD does NOT yet support BSD ports tree, thus only binary packages are supported. upjail.up-fbsd now has POUDRIERE update support, see help below.
+
+	pkg
+	up date		= sudo pkg update
+	up grade	= sudo pkg upgrade
+	up check	= sudo pkg check -d
+	
+	pkg and freebsd-update
+	up sys		= sudo freebsd-update fetch install
+	up full		= up sys && up date && up grade
+
+The command list may have been changed.
+Please check the exact up file before use.
+_EOF_
+		;;
+		*) printf "up does not have help entry for your system because it is not supported.\n"
+		;;	
+esac

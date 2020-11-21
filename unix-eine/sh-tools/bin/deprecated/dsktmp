@@ -1,0 +1,8 @@
+#!/bin/bash
+# catdisk - check HDD temp via smartmontools
+[[ -z "$(command -v smartctl)" ]] && printf "%s\n" "dsktmp: smartctl not found, try installing smartmontools first" "dsktmp: Aborting.." && exit 1 # sanity check
+case "$(uname)" in Darwin) defdisk="disk0" ;; FreeBSD) defdisk="ada0" ;; Linux) defdisk="sda" ;; esac # define default 'disk0'
+[[ -z "$1" ]] && sdnum="$defdisk" || sdnum="$1" # set target disk $sdnum
+# Execution block
+printf "%s\n" "dsktmp: Disk temperature checking shortcut" "dsktmp: Value is in Celsius" ; sudo smartctl -a /dev/"$sdnum" | grep Temperature | awk {'print $10'} || sudo smartctl -d sat -a /dev/"$sdnum" | grep Temperature_Celsius # failsafe
+#____________________   EOF   ____________________#

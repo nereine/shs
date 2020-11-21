@@ -1,0 +1,44 @@
+#!/bin/bash
+# ssc: sed sshd config
+# sed specific line and pattern in /etc/ssh/sshd_config
+printf "ssc: sed sshd_config\n"
+sscfail() {
+	failloc="$1" && case "$failloc" in "") failloc="" ;; *) failloc=" on $1" ;; esac ; printf "ssc failed%s, will now exit\n" "$failloc"; exit 1
+}
+# some sanity check
+sshconfig="/etc/ssh/sshd_config" ; [[ ! -f $sshconfig ]] && printf "sshd_config not found\n" && sscfail "sanity check"; [[ "$(cat /etc/issue)" == *"MX Linux"* ]] && sshserver="ssh" || sshserver="sshd"
+# grep linenumber
+lineyes=$( grep -n PasswordAuthentication\ yes "$sshconfig" | cut -c1-2 ) ; lineno=$( grep -n PasswordAuthentication\ no "$sshconfig" | cut -c1-2 )
+# get previous state of sshd_config
+prevstat() {
+	prevstate="$(sed -n "$linenum"p "$sshconfig")" ; [[ "$prevstate" == "#"* ]] && printf "NOTICE: the line is commented out\n" ; printf "Previous state: $prevstate\n"
+}
+# get current state of sshd_config
+currstat() {
+	currstate="$(sed -n ${linenum}p $sshconfig)" ; printf "Current  state: $currstate\n"
+}
+#	Some errors
+if	[[ -z "$lineno" ]] && [[ -z "$lineyes" ]]; then
+	printf "Couldn't get linenumber\n" ; sscfail "sanity check - line number"
+elif	[[ -n "$lineno" ]] && [[ -n "$lineyes" ]]; then
+	printf "Config corrupted: check $sshconfig\n" ; sscfail "sanity check - line number"
+#	Change PasswdAuth from yes to no
+elif 	[[ -n "$lineyes" ]]; then
+	linenum="$lineyes" && prevstat && sudo sed -i.bak "${lineyes}s/yes/no/" "$sshconfig" && currstat && printf "Successfully changed sshd_config password authentication from yes to no\n" || sscfail "substituting line 'yes'"
+#	Change PasswdAuth from no to yes
+elif	[[ -n "$lineno" ]]; then
+	linenum="$lineno" && prevstat && sudo sed -i.bak "${lineno}s/no/yes/" "$sshconfig" && currstat && printf "Successfully changed sshd_config password authentication from no to yes\n" || sscfail "substituting line 'no'"
+fi
+printf "%s\n" "" "Restarting sshd service with the following configuration" "$( sed -n ${linenum}p $sshconfig )" ""
+# restart sshd service
+case "$(uname)" in 
+	"Darwin")
+		syspref() {
+		printf "ssc-syspref: received $1\n"
+		sudo systemsetup -setremotelogin "$1"
+	}
+		printf	"Do you really want to start sshd on this Mac?\n" ; read -p "(Enter upper-case Y for YES, leave BLANK for NO): " wantssh && [[ "$wantssh" == "Y" ]] && syspref on && printf "%s\n" "You might have to issue the following commands afterward:" "sudo launchctl stop com.openssh.sshd && sudo launchctl start com.openssh.sshd" || printf "Uppercase Y not entered, turning remote login off in System Preference\n" ; syspref off
+		sudo systemsetup -getremotelogin ; exit 0 ;;
+	*)	[[ "$(command -v systemctl)" ]] && printf "ssc: using systemd to restart %s\n" "$sshserver" && sudo systemctl reload "$sshserver" && sudo systemctl status "$sshserver" && exit 0 || printf "ssc: using service command to restart %s\n" "$sshserver" && sudo service "$sshserver" reload && sudo service "$sshserver" restart && sudo service "$sshserver" status && exit 0 ;;
+esac
+sscfail "post execution"

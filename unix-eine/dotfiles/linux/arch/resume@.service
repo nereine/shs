@@ -1,0 +1,12 @@
+[Unit]
+Description=User resume actions
+After=suspend.target
+
+[Service]
+User=root
+Type=simple
+ExecStart=/usr/bin/chvt 2
+#ExecStartPost=/usr/bin/chvt 1
+
+[Install]
+WantedBy=suspend.target

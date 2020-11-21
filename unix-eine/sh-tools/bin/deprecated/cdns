@@ -1,0 +1,4 @@
+#!/bin/bash
+# check DNS service
+cdaemon="stubby" # or "pihole-FTL"
+case "$1" in "r") svstat restart "$cdaemon" ;; "l") svstat log "$cdaemon" ;;  n*) printf "cdns: will netstat with filter: $cdaemon\n" && sudo netstat -tulnp|grep "$cdaemon" ;; *) svstat "$cdaemon" ;; esac

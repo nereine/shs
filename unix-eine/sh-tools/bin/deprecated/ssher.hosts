@@ -1,0 +1,25 @@
+#!/bin/bash
+# ssher.hosts - set ssher host variables
+# You can use case statement below to set $hostssh and $ipssh for ssher
+# ssher will source ssher.hosts if help page is not requested
+case "$1" in
+#	shortcuts	hosts & ip
+	vol)	loginssh="volumio"
+		hostssh="volumio.local"
+		ipssh="192.168.1.191" ;;
+	rock)	loginssh="rock"
+		hostssh="rockpi"
+		ipssh="192.168.1.200" ;;
+	mx)	loginssh="artnoi"
+		hostssh="mx.local"
+		ipssh="192.168.1.169" ;;
+	vim3)	loginssh="artnoi"
+		hostssh="vim3.lan"
+		ipssh="192.168.1.222" ;;
+	doc)	loginssh="artnoi"
+		hostssh="artnoi.com" ;;
+	vul)	loginssh="artnoi"
+		hostssh="sub.artnoi.com" ;;
+	*)	read -r -p "Enter your remote login (username) on $1: " loginssh
+		ipssh="$1" && hostssh="$1" ;;
+esac

@@ -1,0 +1,12 @@
+#!/bin/bash
+# check openvpn service
+case "$1" in [tl]) [[ "$UID" != 0 ]] && printf "cvpn WARNING: You should be root\n" ;; esac && vpndaemon="openvpn-client" # or "openvpn-server"
+logfile1="openvpn.log" && logfile2="openvpn-status.log"
+printf "%s\n" "Enter your configuration profile for $vpndaemon" "Note: could be blank if you know what you are doing" && read -r -p "Configuration profile: " ovpn && cdaemon="$vpndaemon@$ovpn" # set the final service name
+case "$1" in
+	"r") [[ -x "$(command -v svstat)" ]] && svstat restart "$cdaemon" || sudo systemctl restart "$cdaemon" ;;
+	[tl]) [[ -f "$(find /etc -type f -name "$logfile1")" ]] && tail -n 20 -f $(locate $logfile1) || printf "cvpn: could not locate $logfile1" && exit 1 ;;
+	"stat"*) [[ -f $(find /var -type f -name "$logfile2") ]] && tail -n 20 -f $(locate $logfile2) || printf "cvpn: could not locate file" && exit 1 ;;
+	"e") [[ -z "$ovpn" ]] && while true; do read -r -p "cvpn WARNING: You did NOT enter configuration file, do you want to create new one? " cnewfile && case "$cnewfile" in [Yy*]) break ;; [Nn*]) exit 0 ;; *) ;; esac ; done ; sudo vim $(sudo find /etc/openvpn -type f -name "$ovpn".conf) ;;
+	*) svstat "$cdaemon" ;;
+esac

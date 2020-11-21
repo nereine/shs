@@ -1,0 +1,7 @@
+#!/bin/bash
+netservices=("NetworkManager","stubby","dnsmasq")
+case "$1" in
+	-f) for serv in ${netservices[*]}; do sudo systemctl restart "$serv" ; done ;;
+	*) for serv in ${netservices[*]}; do sudo systemctl is-enabled "$serv" --quiet && ! sudo systemctl is-active --quiet "$serv" && sudo systemctl restart "$serv" ; done ;; # Restart failed services
+esac
+

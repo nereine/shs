@@ -1,0 +1,2 @@
+#!/bin/bash
+history -c && rm $HOME/.bash_history

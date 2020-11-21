@@ -1,0 +1,156 @@
+#!/bin/bash
+# up is a simple cross-platform shell script for package/system upgrade
+
+## Some sanity checks
+# Exit if $OS variable is available from .bash_profile
+[[ -z "$OS" ]] && printf "up: could not get OS information from .bash_profile\n" && exit 1
+
+# Sourcing external files - these files should already be in $HOME/bin
+fts=(\
+	# This file will sed the first line to appropriate shell
+	"$HOME/bin/ss.sh"\
+	# This file will provide yes/no prompt functionality
+	"$HOME/bin/yn.sh"\
+	# This file will provide line breaks functionality
+	"$HOME/bin/lb.sh"\
+)
+for f in ${fts[@]};
+	do	[[ -f $f ]] && [[ -r $f ]]\
+	&& . $f || printf "up: could not source %s\n" "$f"
+done
+
+upupdate() {
+	typeset -A updateTable
+	updateTable[desc]="Update package database"
+	updateTable[Darwin]="brew outdated"
+	updateTable[OpenBSD]="syspatch -c"
+	updateTable[Debian]="apt update"
+	updateTable[Arch]="checkupdates"
+	updateTable[Void]="xbps-install -Suv"
+	updateTable[Redhat]="dnf check-update"
+	
+	# Assign $cmd and its description
+	cmddesc+="${updateTable[desc]}"
+	cmd+="${updateTable[$OS]}"
+}
+upupgrade() {
+	typeset -A upgradeTable
+	upgradeTable[desc]="Upgrade packages"
+	upgradeTable[Darwin]="brew upgrade"
+	upgradeTable[OpenBSD]="syspatch"
+	upgradeTable[FreeBSD]="pkg update"
+	upgradeTable[Debian]="apt upgrade"
+	upgradeTable[Arch]="pacman -Syu"
+	upgradeTable[Void]="xbps-install -Suv"
+	upgradeTable[Redhat]="dnf update"
+	
+	# Assign $cmd and its description
+	cmddesc+="${upgradeTable[desc]}"
+	cmd+="${upgradeTable[$OS]}"
+}
+
+upclean() {
+	typeset -A cleanTable
+	upgradeTable[desc]="Clean old package cache and files"
+	upgradeTable[Darwin]="brew cleanup"
+	upgradeTable[OpenBSD]="syspatch"
+	upgradeTable[FreeBSD]="pkg autoremove ; pkg clean -a"
+	upgradeTable[Debian]="apt autoremove ; apt autoclean"
+	upgradeTable[Arch]="yay -Sc"
+	upgradeTable[Void]="xbps-remove -Oo"
+	upgradeTable[Redhat]="dnf autoremove ; dnf clean all"
+	
+	# Assign $cmd and its description
+	cmddesc+="${cleanTable[desc]}"
+	cmd+="${cleanTable[$OS]}"
+}
+
+# Special commands not included in the tables
+upspecial() { 
+	typeset -A specTable
+	
+	## Synopsis
+	# $put_your_arbitary_logic_here
+	# specTable[desc]="Your arbitary special command desciption"
+	# specTable[$matching_argument]+='Your arbitary shell command(s)'
+	## Example below shows testing $OS==Arch and then put 'yay -Syu' into the table with y as the index or argument
+	
+	# Arch Linux
+	if [[ "$OS" == "Arch" ]]; then
+			# 'up y' (AUR via yay)
+		if	[[ -n "command -v yay" ]]; then
+			specTable[desc]="Upgrade AUR packages"
+			specTable[y]+='yay -Syu'
+		else
+			printf "up: yay not found\n"
+			return 1
+		fi
+	elif [[ "$OS" == "Darwin" ]]; then
+	# macOS: use ss.sh to sed the first line of this file to /usr/local/bin/bash
+	# instead of /bin/bash which does not support associative arrays
+		specTable[desc]+="Change the first line of $0 to '$SHELL'"
+		specTable[fix]+="sedshell $0"
+	fi
+	
+	# Assign $cmd and its description
+	cmddesc+="${specTable[desc]}"
+	cmd+="${specTable[$1]}"
+}
+
+# Commands that will be run after $cmd
+upafter() {
+	if	[[ "$OS" == "Darwin"	]]; then
+		simyn "up: Check for Apple updates?"\
+		&& softwareupdate -l\
+		&& simyn "up: Perform Apple system upgrade from this shell? (Not recommended)"\
+		&& softwareupdate -i -a
+	elif [[ "$OS" == "Arch" ]]; then
+		simyn "Reload-restart systemd services?"\
+		&&	systemctl daemon-reload\
+		&&	systemctl reset-failed
+	fi
+}
+
+uparg(){
+	# Get commands from the tables based on argument
+	case "$1" in
+		"list"|"date")
+			upupdate ;;
+		"grade")
+			upupgrade ;;
+		"clean")
+			upclean ;;
+		# Else run special command
+		*)
+			upspecial "$1" ;;
+	esac
+}
+
+upcmd() {
+	# upcmd() will generate an array of commands to be run
+	typeset -a cmddesc
+	typeset -a cmd
+	
+	# Get commands from the tables based on argument
+	uparg "$1"
+
+	# Run commands from the tables
+	for c in "${cmd[@]}"; do
+		for d in "${cmddesc[@]}"; do
+			printf "Description: %s\n" "$d"
+			printf "Running command: %s\n" "$c"
+			$c;
+		done
+	done
+}
+
+main() {
+	# Only run with argument
+	if [[ -n "$1" ]]; then
+	# Get command list
+		upcmd $1
+	# Run command after
+		upafter
+	fi
+}
+main "$1"
