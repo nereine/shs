@@ -23,3 +23,13 @@ installdf() {
 }
 # main
 printf "install.sh: Enter 'd' for dotfiles, or 's' for sh-tools,\nor press Ctrl+C to exit\n" && read -r -p "(BLANK=default=BOTH): " installprompt && [[ -z $installprompt ]] && installsh && line && installdf || case $installprompt in "s"*) installsh ;; "d"*) installdf ;; esac && unset $vanrsync
+
+if [[ -n "$OS" ]] && [[ "$OS" == "Darwin" ]]; then 
+	. sh-tools/bin/ss.sh
+#	fixfiles=$("$HOME/bin/newup")
+#	for f in "${fixfiles[@]}"; do
+		sedshell "$HOME/bin/newup";
+#	done
+fi
+
+cp $HOME/.config/shell/prompts.bak $HOME/.config/shell/prompts
