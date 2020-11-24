@@ -1,7 +1,7 @@
 ## Installation
 To install, first clone this repository:  
 ```
-git clone https://gitlab.com/artnoi-staple/unix.git
+git clone https://github.com/nereine/shs/tree/master/unix-eine
 ```
 Then change working directory to the repository:
 ```
