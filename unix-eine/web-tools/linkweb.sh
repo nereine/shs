@@ -1,4 +1,4 @@
-#/bin/bash
+#!/usr/bin/env bash
 # linkweb.sh - link files for ssg5
 # Markdown and HTML locations
 mdir=("md")

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # yn.sh - stupid yes no prompt
 notyn() {
 	printf "Please enter Y or N for yes or no\n"

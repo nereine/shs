@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # ssc: sed sshd config
 # sed specific line and pattern in /etc/ssh/sshd_config
 printf "ssc: sed sshd_config\n"

@@ -1,2 +1,2 @@
-#!/bin/bash
+#!/usr/bin/env bash
 bookmark="$HOME/bin/dmenufirefox.bookmark" ; url="$(cat "$bookmark" | dmenu -i)" && [[ -n "$url" ]] && firefox "$url"

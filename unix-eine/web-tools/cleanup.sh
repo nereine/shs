@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ## This script sources external files (lb.sh, yn.sh, sendweb.sh, and cleanup.sh), which are provided in my "sh-tools/web-tools" from gitlab.com/artnoi-staple/unix.
 

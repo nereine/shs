@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 netservices=("NetworkManager","stubby","dnsmasq")
 case "$1" in
 	-f) for serv in ${netservices[*]}; do sudo systemctl restart "$serv" ; done ;;

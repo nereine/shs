@@ -1,169 +1,74 @@
-#!/bin/bash
-printf "up - LOE\n" # up - shitty update utility - Logical Operator Edition (artnoi.com/blog/sh-tools-loe.html)
-(( "$#" <= "2" )) && defi1="$1" && defi2="$2" && kern=$(uname) || printf "up: the 3rd argument will be unused"
-function leave() { # leave peacfully when no errors were found, while reporting what arguments have been entered
-	[[ -z $defi2 ]] && defi2="no" ; line ; printf "%s\n" "up: 'up $defi1' with $defi2 option executed" ; line ; unset upyay ; exit 0
-}
-. "$(command -v yn.sh)" # this will provide a prototype yes/no functions (defyn and funyn)
-. "$(command -v lb.sh)" # this will provide a prototype yes/no functions (defyn and funyn)
-up-help() { # up-help clears the screen and prints long-ass help pages as well as documentation of up. it is called by up-handle-error upon encountering $1 resembling *hel* (help). After it is called, it sources up.help file containing the actual script and help pages
-	uhloc="$HOME"/bin/up.help && [[ -f "$uhloc" ]] && source "$uhloc" && exit 0 || line ; printf "up-help: FATAL: Help pages not found at $uhloc\n" && line && exit 1
-}
-up-handle-error() { # up-handle-error is called by normal execution as the last case, so it was also used to call up-help
-	[[ "$defi1" == *"hel"* ]] && printf "up-handle-error: Redirecting you to up-help..\n" && up-help || [[ -z "$defi1" ]] && up-print-error noarg || up-print-error inval
-}
-up-print-error() { # up-print-error is a dumb print functions that uses a very simple case statement to print error messages.
-	see_help()	{
-	printf "See 'up help' for available options\n"
-	}
-	case "$1" in
-		"inval") printf "UP_ERROR: Invalid argument >> %s <<\n" "$defi1" ; see_help && exit 1 ;;
-		"noarg") printf "UP_ERROR: Expected argument, e.g. up date\n" ; see_help && exit 1 ;;
-	esac # $1 is parsed by up-handle-error(), note: all of the cases should exit with 1
-}
-[[ "$defi1" == "git" ]] && source "$(command -v up-git)" && upgit "$defi2" # up-git execution is done just before the functions
+#!/usr/bin/env bash
+# up is a simple cross-platform shell script for package/system upgrade
+# up is used in conjunction with the separate up.tables
+# up.tables file is used to store the command tables for ease of adding/removing command 
+# In addition to up.tables, up also requires extra shell scripts to work
+# The up.tables and script files are available from https://gitlab.com/artnoi-staple/unix
 
-# Below are the functions, each corresponds to a specific operating system type. They all use case statements to execute the actual upgrade commands.
-up-pm()	{	# performs upgrade on Arch Linux systems using pacman, and also yay
-	pm-sync() { # do not use up-pm to install Arch software - only use it for upgrades
-		[[ -z "$defi2" ]] && sudo pacman -Syu || sudo pacman -Syu "$defi2"
-	}
-	pm-aur() {
-		[[ -z "$(command -v 'yay')" ]] && printf "up-pm-aur: yay not found (up uses yay to handle AUR packages)"
-		[[ "$UID" == "0" ]] && printf "up-pm: yay should not be run as root\n" && return 1 || upyay="yes" && [[ -n "$defi2" ]] && yay -Syu "$defi2" || yay -Syu
-	}
-	pm-prompt-aur()	{
-		[[ -n "$upyay" ]] && pm-aur || funyn "up-pm: Do you want to upgrade AUR packages too?" "pm-aur" "up-pm: Not upgrading AUR" "pm-sync" # will not ask if "up y" is input Note: $upyay is declared in "y" case below
-		
-	}
-	pm-prompt-systemd() {
-		defyn "up-pm: Do you want to reload systemd daemons?" "sudo systemctl daemon-reload && sudo systemctl reset-failed" "up-pm: Not reloading systemd daemon"
-	}
-	pm-prompt-pacman-file() {
-		defyn "up-pm: Do you want to sync pacman 'file' database too?" "sudo pacman -Fy" "up-pm: Not updating file database"
-	}
-	pm-prompt() {
-		line && pm-prompt-aur && line && pm-prompt-pacman-file && line && pm-prompt-systemd
-	}
+## Some sanity checks
+# Exit if $OS variable is available from .bash_profile
+[[ -z "$OS" ]] && printf "up: could not get OS information from .bash_profile\n" && exit 1
+
+# Sourcing external files - these files should already be in $HOME/bin
+fts=(\
+	# This file will provide yes/no prompt functionality
+	"$HOME/bin/yn.sh"\
+	# This file will provide line breaks functionality
+	"$HOME/bin/lb.sh"\
+)
+for f in ${fts[@]};
+	do	[[ -f $f ]] && [[ -r $f ]]\
+	&& . $f || printf "up: could not source %s\n" "$f"
+done
+
+uparg(){
+	# Get commands from the tables based on argument
+	. "$(command -v up.tables)"
+
 	case "$1" in
-		"date") [[ -z "$(command -v checkupdates)" ]] && printf "up: checkupdates not found, please install 'pacman-contrib' package\n" || checkupdates ; leave ;;
-		"grade") pm-prompt ; leave ;;
-		"y") export upyay="yes" && pm-prompt ; leave ;;
-		"clean") line && defyn "up-pm: delete pacman and yay cache files?" "yay -Sc" "up-pm: Not deleting old cachefile" ; leave ;;
-		*) up-handle-error ;;
+		"date")
+			upupdate ;;
+		"grade")
+			upupgrade ;;
+		"list")
+			uplist ;;
+		"sys")
+			upsys ;;
+		"clean")
+			upclean ;;
+		# Else run special command
+		*)
+			upspecial "$1" ;;
 	esac
 }
-up-dnf() { # performs upgrades on Red Hat systems
-	dnf-up() {
-		case "$1" in
-			"date") sudo dnf check-update ;;
-			"grade") sudo dnf update ;;
-		esac
-	}
-	dnf-cl() {
-		sudo dnf autoremove
-		sudo dnf clean all
-	}
-	case "$1" in
-		"date") dnf-up "date" ; leave ;;
-		"grade") dnf-up "grade" ; leave ;;
-		"clean") dnf-cl ; leave ;;
-		*) up-handle-error ;;
-	esac
+
+upcmd() {
+	# upcmd() will generate an array of commands to be run
+	typeset -a cmddesc
+	typeset -a cmd
+	
+	# Get commands from the tables based on argument
+	uparg "$1"
+
+	# Run commands from the tables
+	for c in "${cmd[@]}"; do
+		printf "Running command: %s\n" "$c"
+		for d in "${cmddesc[@]}"; do
+			printf "Description: %s\n" "$d"
+			$c;
+		done
+	done
 }
-up-deb() {	# performs upgrade on Debian system using APT
-	upgrade() {
-		printf "!!! UPGRADING !!!\n" ; line ; sudo apt upgrade "$defi2" -yy
-	}
-	clean() {
-		printf "!!! CLEANING !!!\n" ; sudo apt-get autoremove --purge "$defi2" ; sudo apt autoclean
-	}
-	case "$1" in
-		"clean") sudo apt update ; clean ; leave ;;
-		"date") sudo apt update ; apt list --upgradeable ; leave ;;
-		"grade") upgrade ; leave ;;
-		"list") apt list --upgradeable ; leave ;;
-		"full") sudo apt update && list ; upgrade && clean ; leave ;; *) up-handle-error ;;
-	esac
-}
-up-void() {	# performs upgrade on Void Linux systems using xbps
-	void-sync() {	
-		sudo xbps-install -Suv
-	}	
-	void-install() {
-		sudo xbps-install -Suv "$defi2"
-	}
-	void-clean() {
-		sudo xbps-remove -Oo
-	}
-	case "$1" in
-		"date") void-sync ; leave ;;
-		"install") void-install ; leave ;;
-		"clean") void-clean ; leave ;;
-		*) up-handle-error ;;
-	esac
-}
-up-fbsd() {	# performs system and pkg upgrade on FreeBSD, as well as Poudriere Jails and Ports Tree (upjail)
-	clean() {
-		sudo pkg autoremove ; sudo pkg clean -a
-	}
-	check() {
-		sudo pkg check -Bdr -a
-	}
-	upfbsd() {
-		sudo freebsd-update fetch install
-	}
-	case "$1" in
-		"date")	sudo pkg update ; leave ;;
-		"grade") sudo pkg upgrade ; leave ;;
-		"clean") clean ; leave ;;
-		"full") sudo pkg upgrade && clean && check ; leave ;;
-		"sys") upfbsd ; leave ;;
-		"check") check ; leave ;; *) up-handle-error ;;
-	esac
-}
-up-darwin() {	# performs upgrades on Homebrew packages, cask packages, and Apple's macOS software.
-	[[ ! -x "$(command -v brew)" ]] && printf "up-darwin: Warning: brew seems to be unexecutable\n"
-	upgrade() {	# upgrade homebrew
-		case "$defi2" in
-			"all")	printf "up: upgrading ALL brew packages, including casks." ; brew upgrade ; brew cask upgrade ;;
-			"c") brew cask upgrade ;;
-			*) [[ -z "$defi2" ]] && printf "up: upgrading non-cask packages\n" && brew upgrade ; [[ -n "$defi2" ]] && printf "up: upgrading specific package >> $defi2 <<\n" && brew upgrade "$defi2" ;; # up-brew
-		esac
-	}
-	cleanbrew() {	# clean homebrew
-		printf "%s\n" "-- CLEANING HOMEBREW --"
-		line
-		brew cleanup
-	}
-	upls() {	# list outdated packages
-		printf "%s\n" "Listing outdated Homebrew packages.." ""
-		brew outdated
-	}
-	up-full() {	# full upgrade
-		[[ "$defi2" == *"list"* ]] && printf "up: listing all available updates..\n" ; upls ; softwareupdate -l ; leave || printf "%s\n" "Caution: ...starting full system upgrade..." "up will upgrade macOS packages before homebrew's" ; softwareupdate -i -a ; upgrade
-	}
-	case "$1" in
-		"date") brew update ; leave ;;
-		"grade") upgrade && brew doctor ; leave ;;
-		"list") upls ; leave ;;
-		"clean") cleanbrew && brew doctor ; leave ;;
-		"full") up-full && cleanbrew && brew doctor ; leave ;; *) up-handle-error ;;
-	esac
-}
-####### Below is the main execution of up - the script will not reach here if up-git was executed
+
 main() {
-	export updistro="$1"
-	printf "up: $updistro ($kern) detected\n"
-	$2 "$defi1" "$defi2" # $2 is the sub-function like up-pm
+	# Only run with argument
+	if [[ -n "$1" ]]; then
+	# Get command list
+		upcmd $1
+	# Line breaks
+		line
+	# Run command after
+		upafter
+	fi
 }
-case $kern in
-	"Darwin")	main "macOS" "up-darwin" ;;
-	"FreeBSD")	main "FreeBSD" "up-fbsd" ;; 
-	"Linux")	[[ -x /usr/bin/pacman ]] && main "Pacman" "up-pm"
-				[[ -x /usr/bin/dnf ]] && main "DNF" "up-dnf"
-				[[ -x /usr/bin/xbps-install ]] && main "Xbps" "up-void"
-				[[ -x /usr/bin/apt ]] && main "APT" "up-deb"
-				printf "up: Unknown GNU/Linux system" ;;
-esac
-#######	EOF #######
+main "$1"

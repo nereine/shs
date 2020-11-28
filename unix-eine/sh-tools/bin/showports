@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # show ports information on FreeBSD
 [[ "$(uname)" != "FreeBSD" ]] && printf "%s\n" "showports: This system is not FreeBSD" "showports: Aborting.." && exit 1
 printf "Specify your poudriere repository name, leave blank for default\n"

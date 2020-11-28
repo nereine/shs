@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # cattmp - stupid cpu temperature monitor utility
 case "$1" in *h*) less << _EOF_ 
 On Linux systems, cattmp by default is used to monitor lmsensors,
@@ -13,4 +13,3 @@ _EOF_
 exit ;;
 esac
 case "$(uname)" in Darwin) [[ -n "$(command -v osx-cpu-temp)" ]] && while true; do osx-cpu-temp && sleep 1 ; done || printf "%s\n" "Please first install osx-cpu-temp" "If Homebrew is installed: brew install osx-cpu-temp" && exit 1 ;; *) [[ -n "$(command -v sensors)" ]] && watch sensors || watch cat /sys/class/thermal/thermal_zone0/temp ;; esac
-#____________________   EOF   ____________________#

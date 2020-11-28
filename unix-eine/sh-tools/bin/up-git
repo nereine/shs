@@ -1,12 +1,24 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # provides git pull script for up
-upgit() {	# the only stand-alone up function used to pull git repositories. up-git even has its own help function!
-	[[ "$1" == "help" ]] && up-help || rootdir="$HOME/git" ; defgdir=("$rootdir"/*) # up-git's default directory - needs fixing but for nows it works for most of the cases.
-	[[ -z $(command -v git) ]] && printf "up-git: git not found, aborting..\n" && line && exit 1
-	line ; printf "%s\n" "up-git: Enter your git directory with RELATIVE PATH below" "up-git: You can set your default git root directory" "by editing defgdir variable near up-git section" "Notice: up-git will pull subdirectories of gdir" "" "Press ENTER for default ($rootdir)" && line ; read -r -p "up-git: git root directory (leave BLANK for DEFAULT): " upgitdir
-	[[ -z "$upgitdir" ]] && gdir=("${defgdir[*]}") || gdir=("${upgitdir[*]}")
-	for workdir in ${gdir[*]}; do
-		[[ -d $workdir/.git ]] && find $workdir -name .git -print -execdir git pull --rebase \; || find $workdir/* -name .git -print -execdir git pull --rebase \; ||  printf "%s\n" "" "up-git: ${workdir} does not appear to be a git directory (.git not found)" "Not pulling ${workdir}"
-	done
-	exit 0	# just exit after up-git
-}
+
+# Sanity checks
+[[ -z $(command -v git) ]] && printf "up-git: git not found, aborting..\n" && return 1
+
+# up-git's default directory - needs fixing but for nows it works for most of the cases.
+rootdir="$HOME/git"
+defgdir=("$rootdir"/*) 
+	
+# Prompt for directory
+printf "%s\n" "up-git: Enter your git directory with RELATIVE PATH below" "up-git: You can set your default git root directory" "by editing defgdir variable near up-git section" "Notice: up-git will pull subdirectories of gdir" "" "Press ENTER for default ($rootdir)"	
+# Get user input
+question="up-git: git root directory (leave BLANK for DEFAULT)" 
+printf "%s: " "$question"
+read answer
+
+# Assign default git directories or from answer
+[[ -z "$answer" ]] && gdir=("${defgdir[@]}") || gdir=("${answer[@]}")
+
+# Main loop
+for workdir in "${gdir[@]}"; do
+	[[ -d $workdir/.git ]] && find $workdir -name .git -print -execdir git pull --rebase \; || find $workdir/* -name .git -print -execdir git pull --rebase \; ||  printf "%s\n" "" "up-git: ${workdir} does not appear to be a git directory (.git not found)" "Not pulling ${workdir}";
+done

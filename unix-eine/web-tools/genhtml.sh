@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ## This script sources external files (lb.sh, yn.sh, sendweb.sh, and cleanup.sh), which are provided in my "sh-tools/web-tools" from gitlab.com/artnoi-staple/unix.
 
@@ -14,7 +14,7 @@ genhtml() {
 	# See https://linuxconfig.org/how-to-use-arrays-in-bash-script	
 	for web in "${!webdirs[@]}" ;
 		do  simyn "Generate html for ${web}"\
-		&& ssg5 "${web[@]}" "${webdirs[$web]}" "Artnoi.com" "https://artnoi.com";
+		&& ssg5 "${web[@]}" "${webdirs[$web]}" "nereine.xyz" "https://nereine.xyz";
 	done
 }
 

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # cpuset - set Linux CPU frequency, V2.0
 # requires cpupower or cpufreq-set
 printf "cpuset: Quick CPU frequency shortcuts for Linux\n"
