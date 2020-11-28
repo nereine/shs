@@ -11,23 +11,15 @@ function movef() {
 installsh() {
 	printf "install.sh: sh-tools install destination\n" && read -r -p "(BLANK=default=$HOME/bin): " DEST && [[ -z "$DEST" ]] && DEST="$HOME" &&
 	sanity "$DEST"
-	movef "$(pwd)/sh-tools/bin" "$DEST" "sh-tools files"
+	movef "$(pwd)/unix-eine/sh-tools/bin" "$DEST" "sh-tools files"
 }
 installdf() {
 	printf "%s\n" "install.sh: installing shell config files" && [[ -z "$sconf" ]] && sconf="$HOME/.config/shell" # shell config directory (for aliases, path, and bash_prompt) Note: sconf is declared in dotfiles/general/.config/shell/aliases
 	sanity "$sconf"
-	movef "$(pwd)/dotfiles/general/.config/shell" "$sconf" "shell config files"
+	movef "$(pwd)/unix-eine/dotfiles/general/.config/shell" "$sconf" "shell config files"
 	line
 	printf "%s\n" "install.sh: installing dotfiles" && sanity "$HOME/.vim/colors"
-	for dotf in dotfiles/general/{.bashrc,.bash_profile,.vim,.vimrc,.tmux.conf,.Xresources,.config}; do movef "$dotf" "$HOME/" "$dotf" ; done # sync general dotfiles to $HOME
+	for dotf in unix-eine/dotfiles/general/{.bashrc,.bash_profile,.vim,.vimrc,.tmux.conf,.Xresources,.config}; do movef "$dotf" "$HOME/" "$dotf" ; done # sync general dotfiles to $HOME
 }
 # main
 printf "install.sh: Enter 'd' for dotfiles, or 's' for sh-tools,\nor press Ctrl+C to exit\n" && read -r -p "(BLANK=default=BOTH): " installprompt && [[ -z $installprompt ]] && installsh && line && installdf || case $installprompt in "s"*) installsh ;; "d"*) installdf ;; esac && unset $vanrsync
-
-if [[ -n "$OS" ]] && [[ "$OS" == "Darwin" ]]; then 
-	. sh-tools/bin/ss.sh
-#	fixfiles=$("$HOME/bin/newup")
-#	for f in "${fixfiles[@]}"; do
-		sedshell "$HOME/bin/newup";
-#	done
-fi
