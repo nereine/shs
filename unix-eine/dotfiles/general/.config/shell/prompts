@@ -1,4 +1,4 @@
-#!bin/bash
+#!/usr/bin/env bash
 # Set the terminal title and prompt
 [[ $COLORTERM = gnome-* && $TERM = xterm ]] && infocmp gnome-256color >/dev/null 2>&1 && export TERM='gnome-256color' || infocmp xterm-256color >/dev/null 2>&1 && export TERM='xterm-256color'
 prompt_git() {
@@ -69,9 +69,9 @@ else
 	yellow="\e[1;33m";
 fi;
 # Highlight the user name when logged in as root.
-[[ "${USER}" == "root" ]] && userStyle="${red}" || userStyle="${orange}"
+[[ "${USER}" == "root" ]] && userStyle="${red}" || userStyle="${blue}"
 # Highlight the hostname when connected via SSH.
-[[ -f "${SSH_TTY}" ]] && hostStyle="${bold}${red}" || hostStyle="${yellow}";
+[[ -f "${SSH_TTY}" ]] && hostStyle="${bold}${red}" || hostStyle="${violet}";
 
 # Set the terminal title and prompt.
 PS1="\[\033]0;\W\007\]"; # working directory base name
