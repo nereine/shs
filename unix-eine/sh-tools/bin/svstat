@@ -1,44 +1,73 @@
 #!/usr/bin/env bash
-function fixsystemd() {
-	sudo systemctl daemon-reload ; sudo systemctl reset-failed
+
+# Prompt user if --now flag should be added to command
+nowprompt() {
+	# Source yn.sh which will provide simyn()
+	ynsh="$HOME/bin/yn.sh"
+	# Silently skip if ynsh is not available
+	[[ ! -f $ynsh ]] && return 0
+	. $ynsh
+
+	# If simyn() returns 0 (yes), declare variable $now
+	simyn "Start/stop/fix $1 now?" && now="--now"
 }
-function nowprompt() {
-	while true ; do read -r -p "svstat: Start/stop $service now (y/N)? " doitnow && case "$doitnow" in [Yy]*) now="--now" && printf "svstat: Will start $service now.\n" && break ;; [Nn]*) break ;; *) printf "Please enter yes or no\n" ;; esac ; done
+
+main() {
+	# main() only has this 'case' statement
+	case "$1" in
+
+		# List failed systemd units
+		'f'|'failed')
+			sudo systemctl list-units --failed ;;
+
+		# ff is for Fix Failed
+		'ff'|'fix')
+			# Print failed systemd units
+			sudo systemctl list-units --failed
+			# Fix if answered yes
+			nowprompt 'failed services' &&\
+			sudo systemctl daemon-reload &&\
+			sudo systemctl reset-failed ;;
+
+		# If unit name specified as $2, show log for unit, else just run journalctl
+		'log')
+			if [[ -n "$2" ]]; then
+				sudo journalctl -u $2
+			else
+				sudo journalctl
+			fi	;;
+
+		'enable')
+			# nowprompt() will return $now="--now" if answered yes
+			nowprompt $2
+			sudo systemctl enable $2 $now ;;
+	
+		'disable')
+			# nowprompt() will return $now="--now" if answered yes
+			nowprompt $2
+			sudo systemctl disable $2 $now ;;
+	
+		'start')
+			sudo systemctl start $2 ;;
+		'stop')
+			sudo systemctl stop $2 ;;
+		'restart')
+			sudo systemctl restart $2 ;;
+		'reload')
+			sudo systemctl reload $2 ;;
+		'cron'|'timer')
+			sudo systemctl list-timers --all ;;
+		
+		# Default behaviour
+		'stat'|*)
+			# 'svstat' will simply run 'systemctl status'
+			if [[ -z "$2" ]]; then
+				sudo systemctl status $1
+			else
+			# 'svstat stat' will simply run 'systemctl status' on $2
+				sudo systemctl status $2
+			fi	;;
+	esac
 }
-case "$1" in
-	cron | timer )	sscmd=("timercmd")	;;
-	log)	 sscmd="logcmd" && service="$2" ;;
-	stat)	 sscmd="statcmd"&& service="$2" ;;
-	stop)	 sscmd="stopcmd" && service="$2" ;;
-	enable)	 sscmd="enablecmd" && service="$2" ;;
-	start)	 sscmd="startcmd" && service="$2" ;;
-	restart) sscmd="restartcmd" && service="$2" ;;
-	reload) sscmd="reloadcmd" && service="$2" ;;
-	disable) sscmd="disablecmd" && service="$2" ;;
-	fix)	 sscmd="fixcmd" && service="$2" ;;
-	*)	 sscmd="nocmd" && service="$1" && printf "svstat: Note - we are using nocmd\n" ;;
-esac
-printf	"svstat: received - $1 $svinit: $sscmd: $service\n"
-case	"$sscmd" in
-	fixcmd)	fixsystemd ;;
-	logcmd)
-		sudo journalctl -u $service ;;
-	timercmd)
-		[[ "$2" == "-r" ]] && printf "svstat: will reload daemons\n" && sudo systemctl daemon-reload && sudo systemctl reset-failed
-		sudo systemctl list-timers --all ;;
-	nocmd | statcmd )
-		sudo systemctl status $service ;;
-	stopcmd)
-		sudo systemctl stop $service ;;
-	restartcmd)
-		fixsystemd && sudo systemctl restart $service ;;
-	reloadcmd)
-		fixsystemd && sudo systemctl reload $service ;;
-	enablecmd)
-		nowprompt && fixsystemd && sudo systemctl enable $service $now ;;
-	startcmd)
-		fixsystemd && sudo systemctl start $service ;;
-	disablecmd)
-		nowprompt && sudo systemctl disable $service $now ;;
-	*)	printf "No case for execution\n" ;;
-esac
+
+main $1 $2

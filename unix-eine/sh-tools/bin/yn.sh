@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # yn.sh - stupid yes no prompt
+unset answer
+
 notyn() {
 	printf "Please enter Y or N for yes or no\n"
 	unset yesno
@@ -24,4 +26,8 @@ simyn-nonbash() { # for non-bash shell
 			*) notyn ;;
 		esac
 	done
+}
+readprompt() {
+	printf "%s: " "$1"
+	read answer
 }

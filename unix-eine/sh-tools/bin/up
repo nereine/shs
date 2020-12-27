@@ -5,70 +5,102 @@
 # In addition to up.tables, up also requires extra shell scripts to work
 # The up.tables and script files are available from https://gitlab.com/artnoi-staple/unix
 
-## Some sanity checks
-# Exit if $OS variable is available from .bash_profile
-[[ -z "$OS" ]] && printf "up: could not get OS information from .bash_profile\n" && exit 1
+## Exit if $OS variable is not available from .bash_profile
+[[ -z "$OS" ]] && printf 'up: could not get OS information from .bash_profile\n' && exit 1
 
-# Sourcing external files - these files should already be in $HOME/bin
+## Sourcing external files. These files should already be in $HOME/bin
 fts=(\
-	# This file will provide yes/no prompt functionality
+	# This file will provide yes/no prompt functionality (simyn())
 	"$HOME/bin/yn.sh"\
-	# This file will provide line breaks functionality
+	# This file will provide line breaks functionality (line())
 	"$HOME/bin/lb.sh"\
 )
-for f in ${fts[@]};
-	do	[[ -f $f ]] && [[ -r $f ]]\
-	&& . $f || printf "up: could not source %s\n" "$f"
+for f in "${fts[@]}";
+	do	[[ -f "$f" ]] && [[ -r "$f" ]]\
+	&& . "$f" || printf 'up: could not source %s\n' "$f"
 done
 
 uparg(){
-	# Get commands from the tables based on argument
-	. "$(command -v up.tables)"
-
+# uparg() will source commands from up.tables
+# and select which to run based on argument ($1)
+	
+	# Sourcing up.tables files. You should have a look at the file before using up
+	. "$(command -v up.tables)";
+	
+	# The commands below (e.g. upupdate) are functions from up.tables
+	# User input ($1) is filtered here in case statement below
 	case "$1" in
-		"date")
+		'd'|'date')
 			upupdate ;;
-		"grade")
+		'g'|'grade')
 			upupgrade ;;
-		"list")
+		'l'|'list')
 			uplist ;;
-		"sys")
+		's'|'sys')
 			upsys ;;
-		"clean")
+		'c'|'clean')
 			upclean ;;
-		# Else run special command
+		'h'|'help')
+			# Print up.tables file using less(1)
+			less "$(command -v up.tables)"
+			printf "$ less $(command -v up.tables)\n"
+			exit ;;
 		*)
+			# If $1 does NOT match any cases above, try special command table
 			upspecial "$1" ;;
 	esac
 }
 
 upcmd() {
-	# upcmd() will generate an array of commands to be run
-	typeset -a cmddesc
-	typeset -a cmd
+# upcmd() will generate normal array of commands to be run ${cmd[]}
+# as well as its description ${cmddesc[]}
+	typeset -a cmd;
+	typeset -a cmddesc;
 	
-	# Get commands from the tables based on argument
+	# uparg() gets commands from up.tables based on argument (user input)
 	uparg "$1"
-
-	# Run commands from the tables
+	
+	# upprompt() prompts user for confirmation.
+	# upprompt() uses variables $c ($cmd) and $d ($cmddesc) used in the 'for' loop below
+	upprompt() {
+		# Show command description
+		printf "up: %s\n" "$d";
+		# Yes/no prompt - exit if no
+ 		simyn "Run command: $c" || exit
+	}
+	
+	# After successful command retrieval from the tables, run commands from ${cmd[]} tables
+	# up uses for loop because it was previously anticipated to run miltiple commands queued in ${cmd[]}
+	# but unfortunately, I am too lazy to write a way to append more commands into the table
 	for c in "${cmd[@]}"; do
-		printf "Running command: %s\n" "$c"
 		for d in "${cmddesc[@]}"; do
-			printf "Description: %s\n" "$d"
-			$c;
+			## Prompt user before running commands sourced from up.tables
+			upprompt;
+			
+			## Command $cmd ($c) is run here
+			# For unknown reason, giving command in double quote will not work on some Linux distros
+			# i.e. the shell would take the whole string "$c" as command to run instead of the first column
+			# e.g. if "$c" == "yay -Syu", the shell will complain command not found: "yay -Syu"
+			if [[ "$OS"!='Darwin' ]]; then
+				$c;
+			else
+			# On macOS, it is reverse. If you don't put $cmd in double quotes, the string will break
+				"$c";
+			fi
+			## Report description as done. Description will be highlighted by lines made out of "="
+			line; printf '%s: done\n' "$d"; line
 		done
 	done
+	
+	# Run "after" command. See more info at unix/sh-tools/bin/up.tables
+	upafter;
 }
 
 main() {
 	# Only run with argument
 	if [[ -n "$1" ]]; then
 	# Get command list
-		upcmd $1
-	# Line breaks
-		line
-	# Run command after
-		upafter
+		upcmd $1;
 	fi
 }
-main "$1"
+main "$1";
