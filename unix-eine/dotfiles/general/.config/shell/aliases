@@ -1,4 +1,4 @@
-#!/bin/env bash
+#!/usr/bin/env bash
 # ----------- Universal Aliases -----------
 # shell config dir
 sconf="$HOME/.config/shell"
@@ -18,8 +18,8 @@ alias -- -="cd -"
 # Shortcuts
 alias g="git"
 alias v="vim"
-alias rg="ranger"
-alias pingg="ping artnoi.com"
+alias sx="startx"
+alias tsm="transmission-remote"
 alias pingg="ping google.com"
 alias fetch="neofetch"
 alias tuxsay="cowsay -f tux"

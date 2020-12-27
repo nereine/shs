@@ -68,10 +68,14 @@ else
 	white="\e[1;37m";
 	yellow="\e[1;33m";
 fi;
+
+# Default prompt colors
+userStyle="${orange}";
+hostStyle="${yellow}";
 # Highlight the user name when logged in as root.
-[[ "${USER}" == "root" ]] && userStyle="${red}" || userStyle="${blue}"
+[[ "${USER}" == "root" ]] && userStyle="${red}"
 # Highlight the hostname when connected via SSH.
-[[ -f "${SSH_TTY}" ]] && hostStyle="${bold}${red}" || hostStyle="${violet}";
+[[ -n "${SSH_CLIENT}" ]] && userStyle="${blue}" && hostStyle="${violet}"
 
 # Set the terminal title and prompt.
 PS1="\[\033]0;\W\007\]"; # working directory base name
