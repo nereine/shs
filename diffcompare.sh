@@ -12,6 +12,11 @@ case "$1" in
 		printf "%s\n" "${mydirs[@]}";
 		readprompt "Relative path: "
 		if [[ -n "$answer" ]]; then
-			rsync -rva "${mydirs[1]}/$answer" "${mydirs[0]}/"
+			if [[ "$answer" == *"/"* ]]; then
+				printf "%s: kuytest"
+				rsync -rva "${mydirs[1]}/$answer" "${mydirs[0]}/$answer"
+			else
+				rsync -rva "${mydirs[1]}/$answer" "${mydirs[0]}/."
+			fi
 		fi ;;
 esac
