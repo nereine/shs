@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-bookmark="$HOME/bin/dmenufirefox.bookmark" ; url="$(cat "$bookmark" | dmenu -i)" && [[ -n "$url" ]] && firefox.sh "$url" 
+bookmark="$HOME/bin/dmenufirefox.bookmark" ; url="$(cat "$bookmark" | dmenu -i -p 'Enter URL or file')" && [[ -n "$url" ]] && firefox.sh "$url" 

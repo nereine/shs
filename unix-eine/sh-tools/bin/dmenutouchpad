@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+case "$(printf "%s\n" "Off" "On" | dmenu -p 'Trackpad:' -i)" in
+	'Off')
+		synclient TouchpadOff=1;;
+	'On')
+		synclient TouchpadOff=0;;
+esac
