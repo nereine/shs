@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 set -e
 fstrim_history=/home/artnoi/fstrim
 echo "$(date +%F): $(fstrim -av)" >> $fstrim_history

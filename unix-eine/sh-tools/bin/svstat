@@ -1,11 +1,11 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
 # Prompt user if --now flag should be added to command
 nowprompt() {
 	# Source yn.sh which will provide simyn()
 	ynsh="$HOME/bin/yn.sh"
 	# Silently skip if ynsh is not available
-	[[ ! -f $ynsh ]] && return 0
+	[ ! -f $ynsh ] && return 0
 	. $ynsh
 
 	# If simyn() returns 0 (yes), declare variable $now
@@ -31,7 +31,7 @@ main() {
 
 		# If unit name specified as $2, show log for unit, else just run journalctl
 		'log')
-			if [[ -n "$2" ]]; then
+			if [ -n "$2" ]; then
 				sudo journalctl -u $2
 			else
 				sudo journalctl
@@ -61,7 +61,7 @@ main() {
 		# Default behaviour
 		'stat'|*)
 			# 'svstat' will simply run 'systemctl status'
-			if [[ -z "$2" ]]; then
+			if [ -z "$2" ]; then
 				sudo systemctl status $1
 			else
 			# 'svstat stat' will simply run 'systemctl status' on $2

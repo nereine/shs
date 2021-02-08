@@ -1,11 +1,11 @@
-#!/usr/bin/env bash
+#!/bin/sh
 # cattmp - stupid cpu temperature monitor utility
 
 watch_cat() {
 	# Our tempperature file
 	f='/sys/class/thermal/thermal_zone0/temp';
 
-	if [[ -f $f ]]; then
+	if [ -f $f ]; then
 		watch cat $f;
 	else
 		printf "%s not found\n" "$f";
@@ -15,7 +15,7 @@ watch_cat() {
 main() {
 	case "$(uname)" in
 		'Darwin')
-			if [[ -n "$(command -v osx-cpu-temp)" ]]; then
+			if [ -n "$(command -v osx-cpu-temp)" ]; then
 				while true;
 					do osx-cpu-temp;
 					sleep 1;
@@ -26,7 +26,7 @@ main() {
 			fi
 			;;
 		*)
-			if [[ -n "$(command -v sensors)" ]]; then
+			if [ -n "$(command -v sensors)" ]; then
 				watch sensors;
 			else
 				watch_cat;

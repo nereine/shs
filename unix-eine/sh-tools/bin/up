@@ -1,54 +1,47 @@
 #!/usr/bin/env bash
 # up is a simple cross-platform shell script for package/system upgrade
-# up is used in conjunction with the separate up.tables
+# up is used together with the separate up.tables
 # up.tables file is used to store the command tables for ease of adding/removing command 
 # In addition to up.tables, up also requires extra shell scripts to work
 # The up.tables and script files are available from https://gitlab.com/artnoi-staple/unix
 
 ## Exit if $OS variable is not available from .bash_profile
-[[ -z "$OS" ]] && printf 'up: could not get OS information from .bash_profile\n' && exit 1
+[ -z "$OS" ]\
+&& printf 'up: could not get OS information from .bash_profile\n'\
+&& exit 1;
 
-## Sourcing external files. These files should already be in $HOME/bin
-fts=(\
-	# This file will provide yes/no prompt functionality (simyn())
-	"$HOME/bin/yn.sh"\
-	# This file will provide line breaks functionality (line())
-	"$HOME/bin/lb.sh"\
-)
-for f in "${fts[@]}";
-	do	[[ -f "$f" ]] && [[ -r "$f" ]]\
-	&& . "$f" || printf 'up: could not source %s\n' "$f"
-done
+## Sourcing external files using source.sh
+[[ "$fts_status" != 'ok' ]]\
+&& . "$(command -v 'source.sh')";
 
 uparg(){
-# uparg() will source commands from up.tables
-# and select which to run based on argument ($1)
+# uparg() will source commands from up.tables and select which to run based on argument ($1)
+# Because we use 'command -v' to find up.tables, sourcing will fail if up.tables is not in $PATH
 	
-	# Sourcing up.tables files. You should have a look at the file before using up
-	. "$(command -v up.tables)";
+	uptables="$(command -v 'up.tables')"\
+	&& . "$uptables";
 	
-	# The commands below (e.g. upupdate) are functions from up.tables
 	# User input ($1) is filtered here in case statement below
 	case "$1" in
 		'd'|'date')
-			upupdate ;;
+			upupdate; ;;
 		'g'|'grade')
-			upupgrade ;;
+			upupgrade; ;;
 		'l'|'list')
-			uplist ;;
+			uplist; ;;
 		's'|'sys')
-			upsys ;;
+			upsys; ;;
 		'c'|'clean')
-			upclean ;;
+			upclean; ;;
 		'h'|'help')
 			# Print up.tables file using less(1)
-			less "$(command -v up.tables)"
-			printf "$ less $(command -v up.tables)\n"
-			exit ;;
+			less "$uptables";
+			printf "$ less %s\n" "$uptables";
+			exit; ;;
 		*)
 			# If $1 does NOT match any cases above, try special command table
-			upspecial "$1" ;;
-	esac
+			upspecial "$1"; ;;
+	esac;
 }
 
 upcmd() {
@@ -58,7 +51,7 @@ upcmd() {
 	typeset -a cmddesc;
 	
 	# uparg() gets commands from up.tables based on argument (user input)
-	uparg "$1"
+	uparg "$1";
 	
 	# upprompt() prompts user for confirmation.
 	# upprompt() uses variables $c ($cmd) and $d ($cmddesc) used in the 'for' loop below
@@ -66,41 +59,44 @@ upcmd() {
 		# Show command description
 		printf "up: %s\n" "$d";
 		# Yes/no prompt - exit if no
- 		simyn "Run command: $c" || exit
+ 		simyn "Run command: $c"\
+		|| exit;
 	}
+
+	# upbefore is usually used to split long command strings in to ${cmd[]} array values
+	# Currently, it is used to split bash commands with ';' and '&&'
+	# See more info at sh-tools/bin/up.tables
+	upbefore;
 	
 	# After successful command retrieval from the tables, run commands from ${cmd[]} tables
 	# up uses for loop because it was previously anticipated to run miltiple commands queued in ${cmd[]}
 	# but unfortunately, I am too lazy to write a way to append more commands into the table
-	for c in "${cmd[@]}"; do
-		for d in "${cmddesc[@]}"; do
+	for c in "${cmd[@]}";
+	do
+		for d in "${cmddesc[@]}";
+		do
 			## Prompt user before running commands sourced from up.tables
 			upprompt;
 			
 			## Command $cmd ($c) is run here
-			# For unknown reason, giving command in double quote will not work on some Linux distros
-			# i.e. the shell would take the whole string "$c" as command to run instead of the first column
-			# e.g. if "$c" == "yay -Syu", the shell will complain command not found: "yay -Syu"
-			if [[ "$OS"!='Darwin' ]]; then
-				$c;
-			else
-			# On macOS, it is reverse. If you don't put $cmd in double quotes, the string will break
-				"$c";
-			fi
+			$SHELL -c "$c";
+			
 			## Report description as done. Description will be highlighted by lines made out of "="
-			line; printf '%s: done\n' "$d"; line
-		done
-	done
+			line; printf '%s: done\n' "$d"; line;
+		done;
+	done;
 	
-	# Run "after" command. See more info at unix/sh-tools/bin/up.tables
+	# Run command after ${cmd[]}.
+	# See more info at unix/sh-tools/bin/up.tables
 	upafter;
 }
 
 main() {
 	# Only run with argument
-	if [[ -n "$1" ]]; then
+	if [ -n "$1" ]; then
 	# Get command list
 		upcmd $1;
-	fi
+	fi;
 }
+
 main "$1";

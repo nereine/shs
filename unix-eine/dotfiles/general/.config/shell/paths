@@ -1,4 +1,0 @@
-#!/bin/env bash
-# macOS path can be more easily edited in /etc/paths
-# FreeBSD path can be more easily edited at /etc/login.conf, run cap_mkdb /etc/login.conf afterwards
-[[ -d $HOME/bin ]] && export PATH="$HOME/bin:$PATH"

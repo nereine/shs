@@ -1,9 +1,9 @@
-#!/usr/bin/env bash
 # ----------- Universal Aliases -----------
 # shell config dir
 sconf="$HOME/.config/shell"
 alias cdcf=$HOME/.config/shell
 # Easier navigation: .., ..., ...., ....., ~ and -
+alias p="pwd" # `cd` is probably faster to type though
 alias d="cd ~/Documents/Dropbox"
 alias dl="cd ~/Downloads"
 alias dt="cd ~/Desktop"
@@ -13,8 +13,6 @@ alias ..="cd .."
 alias ...="cd ../.."
 alias ....="cd ../../.."
 alias .....="cd ../../../.."
-alias ~="cd ~" # `cd` is probably faster to type though
-alias -- -="cd -"
 # Shortcuts
 alias g="git"
 alias v="vim"

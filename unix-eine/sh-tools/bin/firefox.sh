@@ -1,6 +1,9 @@
-#!/usr/bin/env bash
+#!/bin/sh
 # firefox.sh - launch Firefox with specific environment variable
 
 # Source environment table from firefox.sh.conf
-. $HOME/bin/firefox.sh.conf
-firefox $1
+ffconf="$HOME/bin/priv/firefox.sh.conf";
+[ -f "$ffconf" ]\
+&& . $ffconf;
+
+firefox "$1";
